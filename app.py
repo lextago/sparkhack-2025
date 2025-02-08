@@ -86,11 +86,3 @@ def index():
 
     return render_template("index.html", form=form, file_url=file_url, prediction=prediction_name)
 
-
-
-if __name__ == "__main__":
-    app.run(debug=True)
-        file_url = url_for("get_file", filename=filename) #biggggg
-    else:
-        file_url = None
-    return render_template("index.html", form=form, file_url=file_url)
