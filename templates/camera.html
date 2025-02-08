@@ -83,23 +83,4 @@
 
 </script>
 
-{% if file_url %}
-    <div class="d-flex justify-content-center">
-        <img src="{{ file_url }}" width="256" height="256" style="border:2px solid black"> 
-    </div>
-{% endif %}
-
-{% if file_url %}
-    <div class="d-flex justify-content-center">
-
-        {% if prediction %}
-            <h4 style="margin:2vh">Plant: {{ prediction["name"] }}</h4>
-            <h4 style="margin:2vh">Status: {{ prediction["status"] }}</h4>
-        {% else %}
-            <h4 style="margin:2vh">Unable to identify any plants.</h4>
-        {% endif %}
-
-    </div>
-{% endif %}
-
 {% endblock %}
