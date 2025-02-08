@@ -5,6 +5,8 @@ from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileRequired, FileAllowed
 from wtforms import SubmitField
 import os
+import base64
+from io import BytesIO
 
 import torch
 import torch.nn as nn
@@ -20,6 +22,8 @@ from architecture import CNN_NeuralNet
 app = Flask(__name__)
 app.config['SECRET_KEY'] = "hello"
 app.config['UPLOADED_PHOTOS_DEST'] = "uploads"
+
+app.config['UPLOAD_FOLDER'] = 'static/uploads/'
 
 photos = UploadSet("photos", IMAGES)
 configure_uploads(app, photos)
@@ -49,13 +53,40 @@ transform = transforms.Compose([
 def get_file(filename):
     return send_from_directory(app.config['UPLOADED_PHOTOS_DEST'], filename)
 
-@app.route('/camera')
+@app.route('/camera', methods=["GET", "POST"])
 def camera():
-    return render_template("camera.html")
+    # Get the JSON data from the request
+    data = request.get_json()
+
+    # Get the base64 image string from the request
+    image_data = data.get('image')
+
+    if image_data:
+        # Remove the prefix "data:image/png;base64," if it exists
+        image_data = image_data.split(',')[1]  # Strip the prefix
+
+        # Decode the base64 string into bytes
+        image_bytes = base64.b64decode(image_data)
+
+        # Convert the bytes to an image using PIL
+        image = Image.open(BytesIO(image_bytes))
+
+        # Save the image to the uploads folder
+        image_path = os.path.join(app.config['UPLOAD_FOLDER'], 'captured_image.png')
+        image.save(image_path)
+
+        return render_template('camera.html', message="Image uploaded successfully!")
+    else:
+        # Return a template with an error message
+        return render_template('camera.html', message="Error: No image provided")
 
 @app.route('/home')
 def home():
     return redirect(url_for("index"))
+
+@app.route('/about')
+def about():
+    return render_template("about.html")
 
 @app.route('/', methods=["GET", "POST"])
 def index():
