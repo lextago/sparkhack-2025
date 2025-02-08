@@ -1,10 +1,13 @@
-from flask import Flask, render_template, request, send_from_directory, url_for, redirect
+from flask import *
 
 from flask_uploads import UploadSet, IMAGES, configure_uploads
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileRequired, FileAllowed
 from wtforms import SubmitField
 import os
+
+import base64
+from io import BytesIO
 
 import torch
 import torch.nn as nn
@@ -23,6 +26,10 @@ app.config['UPLOADED_PHOTOS_DEST'] = "uploads"
 
 photos = UploadSet("photos", IMAGES)
 configure_uploads(app, photos)
+
+UPLOAD_FOLDER = "uploads"
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+app.config['UPLOAD_FOLDER'] = "uploads"
 
 class UploadForm(FlaskForm):
     photo = FileField(
@@ -49,8 +56,60 @@ transform = transforms.Compose([
 def get_file(filename):
     return send_from_directory(app.config['UPLOADED_PHOTOS_DEST'], filename)
 
-@app.route('/camera')
+@app.route('/camera', methods=["POST"])
 def camera():
+    data = request.get_json()  # Get the JSON data from the request
+    image_data = data.get('image')  # Get the image data
+
+    if image_data:
+        # Remove the prefix "data:image/png;base64," if it exists
+        image_data = image_data.split(',')[1]  # Strip the prefix
+
+        # Decode the base64 string into bytes
+        image_bytes = base64.b64decode(image_data)
+
+        # Convert the bytes to an image using PIL
+        image = Image.open(BytesIO(image_bytes))
+
+        # Save the image to your uploads folder (or any folder you want)
+        image_path = os.path.join(app.config['UPLOAD_FOLDER'], 'captured_image.png')
+        image.save(image_path)
+
+        # Perform prediction (same logic as before)
+        image = image.convert('RGB')
+        image = transform(image).unsqueeze(0)
+
+        # Assuming you have a model for prediction
+        with torch.no_grad():
+            output = model(image)
+            _, predicted = torch.max(output, 1)
+            prediction = predicted.item()
+
+            class_names = ['Apple___Apple_scab', 'Apple___Black_rot', 'Apple___Cedar_apple_rust', 'Apple___healthy', 
+                           'Blueberry___healthy', 'Cherry_(including_sour)___healthy', 'Cherry_(including_sour)___Powdery_mildew', 
+                           'Corn_(maize)___Cercospora_leaf_spot Gray_leaf_spot', 'Corn_(maize)___Common_rust_', 'Corn_(maize)___healthy', 
+                           'Corn_(maize)___Northern_Leaf_Blight', 'Grape___Black_rot', 'Grape___Esca_(Black_Measles)', 'Grape___healthy', 
+                           'Grape___Leaf_blight_(Isariopsis_Leaf_Spot)', 'Orange___Haunglongbing_(Citrus_greening)', 'Peach___Bacterial_spot', 
+                           'Peach___healthy', 'Pepper,_bell___Bacterial_spot', 'Pepper,_bell___healthy', 'Potato___Early_blight', 'Potato___healthy', 
+                           'Potato___Late_blight', 'Raspberry___healthy', 'Soybean___healthy', 'Squash___Powdery_mildew', 'Strawberry___healthy', 
+                           'Strawberry___Leaf_scorch', 'Tomato___Bacterial_spot', 'Tomato___Early_blight', 'Tomato___healthy', 'Tomato___Late_blight', 
+                           'Tomato___Leaf_Mold', 'Tomato___Septoria_leaf_spot', 'Tomato___Spider_mites Two-spotted_spider_mite', 'Tomato___Target_Spot', 
+                           'Tomato___Tomato_mosaic_virus', 'Tomato___Tomato_Yellow_Leaf_Curl_Virus']
+            prediction_name = class_names[prediction]
+
+            # Clean the prediction name
+            tokens = prediction_name.split("_")
+            tokens = list(filter(None, tokens))
+            prediction_name = " ".join(tokens[:-1])
+            prediction_status = tokens[-1:][0]
+
+        # Return the prediction and status as JSON response
+        return jsonify({
+            'prediction': prediction_name,
+            'status': prediction_status
+        }), 200
+    else:
+        pass
     return render_template("camera.html")
 
 @app.route('/home')

@@ -15,35 +15,91 @@
 
 <script>
 
-// Elements for taking the snapshot
-var video = document.getElementById('video');
-var canvas = document.getElementById('canvas');
-var context = canvas.getContext('2d');
-
-canvas.style.display = "none";
-
-// Get access to the camera!
-if(navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-    // Not adding `{ audio: true }` since we only want video now
-    navigator.mediaDevices.getUserMedia({ video: true }).then(function(stream) {
-        //video.src = window.URL.createObjectURL(stream);
-        video.srcObject = stream; // assing stream to <video>
-        video.play();             // play stream
-    });
-}
-
-// Trigger photo take
-document.getElementById("snap").addEventListener("click", function() {
-    context.drawImage(video, 0, 0, 640, 480);  // copy video frame to canvas
-    canvas.style.display = "block";
-    if (video.style.display === "none") {
-        video.style.display = "block";
-        canvas.style.display = "none";
-    } else {
-        video.style.display = "none";
-        canvas.style.display = "block";
+    // Elements for taking the snapshot
+    var video = document.getElementById('video');
+    var canvas = document.getElementById('canvas');
+    var snap = document.getElementById('snap');
+    var context = canvas.getContext('2d');
+    
+    canvas.style.display = "none";
+    
+    // Get access to the camera!
+    if(navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        // Not adding `{ audio: true }` since we only want video now
+        navigator.mediaDevices.getUserMedia({ video: true }).then(function(stream) {
+            //video.src = window.URL.createObjectURL(stream);
+            video.srcObject = stream; // assing stream to <video>
+            video.play();             // play stream
+        });
     }
-});
+
+    // Send the captured image to the Flask server
+    async function sendImageToServer(imageData) {
+        const response = await fetch('/camera', {
+        method: 'POST',
+        headers: {
+        'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ image: imageData })
+    });
+    if (response.ok) {
+        const result = await response.json();
+        alert(`Prediction: ${result.prediction}, Status: ${result.status}`);
+    } else {
+        alert('Error uploading image');
+    }
+        return imageData;
+    }
+    
+    // Trigger photo take
+    document.getElementById("snap").addEventListener("click", function() {
+        context.drawImage(video, 0, 0, 640, 480);  // copy video frame to canvas
+        canvas.style.display = "block";
+        if (video.style.display === "none") {
+            video.style.display = "block";
+            canvas.style.display = "none";
+        } else {
+            video.style.display = "none";
+            canvas.style.display = "block";
+        }
+        this.style.display = "none";
+
+        var img_url = canvas.toDataURL('image/png');
+        sendImageToServer(img_url);
+    });
+
+    document.getElementById("camera").addEventListener("click", function() {
+        if(canvas.style.display = "block"){
+            canvas.style.display = "none";
+        }
+        if (video.style.display === "none") {
+            video.style.display = "block";
+            snap.style.display  = "block";
+        } else {
+            video.style.display = "none";
+            snap.style.display  = "none";
+        }
+    });
+
 </script>
+
+{% if file_url %}
+    <div class="d-flex justify-content-center">
+        <img src="{{ file_url }}" width="256" height="256" style="border:2px solid black"> 
+    </div>
+{% endif %}
+
+{% if file_url %}
+    <div class="d-flex justify-content-center">
+
+        {% if prediction %}
+            <h4 style="margin:2vh">Plant: {{ prediction["name"] }}</h4>
+            <h4 style="margin:2vh">Status: {{ prediction["status"] }}</h4>
+        {% else %}
+            <h4 style="margin:2vh">Unable to identify any plants.</h4>
+        {% endif %}
+
+    </div>
+{% endif %}
 
 {% endblock %}
