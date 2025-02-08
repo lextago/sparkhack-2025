@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, send_from_directory, url_for
+from flask import Flask, render_template, request, send_from_directory, url_for, redirect
 
 from flask_uploads import UploadSet, IMAGES, configure_uploads
 from flask_wtf import FlaskForm
@@ -13,6 +13,9 @@ from PIL import Image
 from architecture import CNN_NeuralNet
 
 #credit to Red Eyed Coder Club on Youtube for code
+#NOTES: add session cookies to prevent reuploading of same image over and over again
+#add a login to keep track of images and plants
+#add camera input to take photo
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = "hello"
@@ -46,9 +49,12 @@ transform = transforms.Compose([
 def get_file(filename):
     return send_from_directory(app.config['UPLOADED_PHOTOS_DEST'], filename)
 
+@app.route('/home')
+def home():
+    return redirect(url_for("index"))
 
 @app.route('/', methods=["GET", "POST"])
-def upload_image():
+def index():
     form = UploadForm()
     file_url = None
     prediction = None
@@ -84,3 +90,7 @@ def upload_image():
 
 if __name__ == "__main__":
     app.run(debug=True)
+        file_url = url_for("get_file", filename=filename) #biggggg
+    else:
+        file_url = None
+    return render_template("index.html", form=form, file_url=file_url)
