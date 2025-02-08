@@ -42,7 +42,10 @@ flask run --port=8000
 ## Usage
 
 Take any of the photos in the /test folder, upload, and submit once 
-you're on the landing page of the site.
+you're on the landing page of the site shown below:
+
+
+
 
 ## Warnings
 
