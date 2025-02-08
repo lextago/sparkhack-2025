@@ -49,6 +49,10 @@ transform = transforms.Compose([
 def get_file(filename):
     return send_from_directory(app.config['UPLOADED_PHOTOS_DEST'], filename)
 
+@app.route('/camera')
+def camera():
+    return render_template("camera.html")
+
 @app.route('/home')
 def home():
     return redirect(url_for("index"))
@@ -59,6 +63,7 @@ def index():
     file_url = None
     prediction = None
     prediction_name = None
+    prediction_status = None
 
     if form.validate_on_submit():
         filename = photos.save(form.photo.data)
@@ -84,13 +89,11 @@ def index():
                 'Tomato___Tomato_mosaic_virus', 'Tomato___Tomato_Yellow_Leaf_Curl_Virus']
             prediction_name = class_names[prediction]
 
-    return render_template("index.html", form=form, file_url=file_url, prediction=prediction_name)
+            tokens = prediction_name.split("_")
+            tokens = list(filter(None, tokens))
+            prediction_name = " ".join(tokens[:-1])
+            prediction_status = tokens[-1:][0]
+            
 
+    return render_template("index.html", form=form, file_url=file_url, prediction={"name":prediction_name, "status":prediction_status})
 
-
-if __name__ == "__main__":
-    app.run(debug=True)
-        file_url = url_for("get_file", filename=filename) #biggggg
-    else:
-        file_url = None
-    return render_template("index.html", form=form, file_url=file_url)
