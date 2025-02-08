@@ -56,7 +56,7 @@ def upload_image():
 
     if form.validate_on_submit():
         filename = photos.save(form.photo.data)
-        file_url = url_for("get_file", filename=filename) #biggggg
+        file_url = url_for("get_file", filename=filename) #bigggggGGGGG
 
         image_path = os.path.join(app.config['UPLOADED_PHOTOS_DEST'], filename)
         image = Image.open(image_path).convert('RGB')
