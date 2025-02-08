@@ -32,6 +32,22 @@ if(navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
     });
 }
 
+async function sendImageToServer(imageData) {
+    const response = await fetch('/camera', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ image: imageData })  // Send the base64 image data
+    });
+
+    if (response.ok) {
+        alert('Image uploaded successfully!');
+    } else {
+        alert('Error uploading image');
+    }
+}
+
 // Trigger photo take
 document.getElementById("snap").addEventListener("click", function() {
     context.drawImage(video, 0, 0, 640, 480);  // copy video frame to canvas
@@ -43,6 +59,8 @@ document.getElementById("snap").addEventListener("click", function() {
         video.style.display = "none";
         canvas.style.display = "block";
     }
+    var imageData = canvas.toDataURL("image/png");  // Get image as base64
+    sendImageToServer(imageData); 
 });
 </script>
 
