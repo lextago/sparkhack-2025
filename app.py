@@ -155,9 +155,9 @@ def predict_image(img, model, class_names):
         prediction_index = predicted.item()
 
     # Debug prints
-    print(f"Predicted index: {prediction_index}")
-    print(f"Number of classes: {len(class_names)}")
-    print(f"Class names: {class_names}")
+    # print(f"Predicted index: {prediction_index}")
+    # print(f"Number of classes: {len(class_names)}")
+    # print(f"Class names: {class_names}")
 
     if prediction_index >= len(class_names):
         raise ValueError(f"Predicted index {prediction_index} is out of range for class_names with length {len(class_names)}")
